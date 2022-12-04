@@ -1,0 +1,106 @@
+---
+title: "Matrix and Linear Models Exercises"
+author: "Emre Usenmez - github.com/emre-us"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# HarvardX PH525.2x: Intro to Linear Models and Matrix Algebra - Exercises
+
+## Intro Exercises
+
+Install the library UsingR:
+
+```{r}
+install.packages("UsingR")
+```
+
+Access Galton's father and son heights:
+
+```{r}
+library(UsingR)
+data("father.son", package = "UsingR")
+```
+
+Q1. What is the average height of the sons?
+
+```{r}
+summary(father.son)
+```
+
+One of the defining features of regression is that we stratify one variable based on others. In Statistics we use the verb "condition". For example, the linear model for son and father heights answers the question how tall do I expect a son to be if I condition on his father being x inches. The regression line answers this question for any x.
+
+Using Galton's dataset, we want to know the expected height of sons if we condition on the father being 71 inches. Create a list of son heights for sons that have fathers with heights of 71 inches (round to the nearest inch). What is the mean of the son heights for fathers that have a height of 71 inches?
+
+```{r}
+library(dplyr)
+fh71 <- father.son %>%
+  filter(round(fheight) == 71)
+
+mean(fh71$sheight)
+
+# Alternatively:
+mean(father.son$sheight[round(father.son$fheight)==71])
+```
+
+
+
+
+
+
+
+
+
+
+## Matrix Notation Exercises
+
+In R we have vectors and matrices. You can create your own vectors with the function c(). Vectors are also the output of many functions such as:
+
+```{r}
+rnorm(5)
+```
+
+You can turn vectors into matrices using functions such as rbind(), cbind(), or matrix().
+
+```{r}
+X = matrix(1:1000, 100, 10)
+```
+
+Q1. What is the entry in row 25, column 3?
+
+```{r}
+X[25,3]
+```
+
+Q2. Using the function cbind(), create a 10x5 matrix with first column x=1:10. Then use 2*x, 3*x, 4*x, and 5*x, respectively in columns 2 through 5. What is the sum of the elements of the 7th row?
+
+```{r}
+x1 <- 1:10
+
+X <- cbind(x1, x*2, x*3, x*4, x*5)
+dim(X)
+
+sum(X[7,])
+```
+
+Q3. Create a matrix with multiples in the 3rd column.
+
+```{r}
+X <- matrix(1:60,20,3, byrow = TRUE)
+
+#to check if 3rd column has all multiples of 3:
+all(X[,3]%%3==0) #The symbol "%%" refer to an arithmetic operation called modulo operation. It gives the remainder after x divided by y. So here if all the 3rd column is divided by 3, the remainder would need to be 0 for the entire column to be multiples of 3. This is a quick way of checking it.
+
+```
+
+Q5. What is the last element of the vector returned by seq(10, 1, -2)?
+
+```{r}
+seq(10,1,-2)
+```
+
+
