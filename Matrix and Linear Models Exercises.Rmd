@@ -466,12 +466,19 @@ To find the least squares estimate in R:
 X <- cbind(1,father.son$fheight) #this binds first column of 1s and fathers' heights as second column
 Y <- father.son$sheight
 
-betahat <- solve(t(X) %*% X) %*% t(X) %*% Y
+betahat <- solve(t(X) %*% X) %*% t(X) %*% Y #in R inverse of a matrix is obtained by the function "solve()". This is why crossproduct of X is within the solve() function
 betahat
 #or
 
 betahat <- solve(crossprod(X)) %*% crossprod(X,Y)
 betahat
+
+#However, solve() function can be unstable. More stable way is to do a QR decomposition and use backsolve() function instead:
+
+QR <- qr(X)
+Q <- qr.Q(QR)
+R <- qr.R(QR)
+backsolve(R, crossprod(Q,Y))
 ```
 
 We can look at how this fits with the data by computing the the estimated $\hat{\beta}_0+\hat{\beta}_1 x$ for any value of $x$:
@@ -532,3 +539,124 @@ betahat
 ```
 
 56.5317368 is roughly the height of Tower of Pisa which is 56 meters high. Since we are dropping the object from a stationary position so the initial velocity should be 0. We get 0.5013565 which is very close to 0. The third term, the one that goes in from of $tt^2$ is about half of 9.8 which is the constant of acceleration, roughly 4.9 meters per second squared. We get -0.50386455 which is pretty close. It is negative because the object is falling.
+
+
+
+
+
+
+
+
+
+
+## Matrix Algebra Examples Exercises
+
+Suppose we are analyzing a set of 4 samples. The first two samples are from a treatment group A and the second two samples are from a treatment group B. This design can be represented with a model matrix like so:
+
+```{r}
+X <- matrix(c(1,1,1,1,0,0,1,1), nrow = 4)
+rownames(X) <- c("A", "A", "B", "B")
+X
+```
+
+Suppose that the fitted parameters for a linear model give us:
+
+```{r}
+beta <- c(5,2)
+```
+
+
+1) What is the fitted value for the A samples? (The fitted Y values)
+
+```{r}
+fitted <- X %*% beta
+fitted["A",]
+```
+
+
+2) What is the fitted value for the B samples? (the fitted Y values)
+
+```{r}
+fitted["B",]
+```
+
+
+
+
+
+
+
+
+
+
+## Inference Review Exercises
+
+The estimate for the linear model terms (beta-hat) will not be the same if we were to re-run the experiment, because the random noise would be different. If we were to re-run the experiment many times, and estimate linear model terms (beta-hat) each time, this is called the sampling distribution of the estimates. If we take the standard deviation of all of these estimates from repetitions of the experiment, this is called the standard error of the estimate. While we are not sampling individuals, you can think about the repetition of the experiment that we are "sampling" new errors in our observation of Y.
+
+Make sure that you are using the correct random number generator (RNG) settings by calling the following command:
+
+```{r}
+RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+```
+
+We have shown how to find the least squares estimates with matrix algebra. These estimates are random variables as they are linear combinations of the data. For these estimates to be useful we also need to compute the standard errors.
+
+Here we review standard errors in the context of linear models.
+
+It is useful to think about where randomness comes from. In our falling object example, randomness was introduced through measurement errors. Every time we rerun the experiment a new set of measurement errors will be made which implies our data will be random. This implies that our estimate of, for example, the gravitational constant will change. The constant is fixed, but our estimates are not. To see this we can run a Monte Carlo simulation. Specifically we will generate the data repeatedly and compute the estimate for the quadratic term each time.
+
+```{r}
+g = 9.8 # meters per second
+h0 = 56.67
+v0 = 0
+n = 25
+tt = seq(0, 3.4, len = n) # time in seconds, because t is a base function for transpose we use tt to indicate time
+y = h0 + v0 * tt - 0.5 * g * tt^2 + rnorm(n, sd = 1)
+```
+
+Now we act as if we didn't know h0, v0, and -0.5*g and use regression to estimate these.
+
+We can rewrite the model as:
+
+$$
+y = b_0 + b_1 t + b_2 t^2 + e
+$$
+
+To obtain te LSE in R we could write:
+
+```{r}
+X = cbind(1, tt, tt^2) #this binds first column of 1s and tts and tt^2s
+A = solve(crossprod(X))%*%t(X) #in R inverse of a matrix is obtained by the function "solve()". This is why crossproduct of X is within the solve() function
+```
+
+
+Given how we have defined A, which of the following is the LSE of g, the acceleration due to gravity?
+
+9.8 is not the answer because the LSE is a random variable. The "A%*%y" gives us the LSE for all three coefficients (b_0, b_1, and b_2). The b_2 for the quadratic term tt^2 is -0.5*g. So, -2 * (A%*% y)[3] gets the estimate of g.
+
+
+In the code above we called to a random function rnorm(). This means that each time the lines of code above are repeated, the estimate of g will be different.
+
+Set the seed t 1, then use he code above in conjunction with the function replicate() to generate 100,000 Monte Carlo simulated datasets. For each dataset compute an estimate of g (don't forget to multiply by -2)
+
+What is the standard deviation of the estimate?
+
+```{r}
+set.seed(1)
+B = 100000
+g = 9.8
+n = 25
+tt = seq(0, 3.4, len = n)
+X = cbind(1, tt, tt^2)
+A = solve(crossprod(X))%*%t(X)
+
+betahat = replicate(B,{
+  y = 56.67 - 0.5*g*tt^2 + rnorm(n, sd=1)
+  betahats = -2 * A%*%y
+  return(betahats[3])
+})
+
+sqrt(mean( (betahat-mean(betahat))^2) )
+```
+
+
